@@ -294,57 +294,8 @@
             overflow-y: auto;
         }
 
-        /* Control button */
-        .control-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 6px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 20px;
-            font-family: 'Inter', sans-serif;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin-top: 10px;
-            letter-spacing: 0.3px;
-        }
 
-        .control-btn.start {
-            background: transparent;
-            color: #36e036;
-            border-color: #26da6b;
-        }
 
-        .control-btn.start:hover {
-            background: rgba(167, 139, 250, 0.1);
-            box-shadow: 0 0 12px rgba(167, 139, 250, 0.25);
-            transform: translateY(-1px);
-        }
-
-        .control-btn.stop {
-            background: transparent;
-            color: #f87171;
-            border-color: #f87171;
-        }
-
-        .control-btn.stop:hover {
-            background: rgba(248, 113, 113, 0.1);
-            box-shadow: 0 0 12px rgba(248, 113, 113, 0.25);
-            transform: translateY(-1px);
-        }
-
-        .control-btn:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        .control-btn .btn-icon {
-            font-size: 13px;
-        }
 
         /* Image download button */
         .image-actions {
@@ -532,6 +483,217 @@
             transition: width 0.3s;
         }
 
+        /* Status bar inline button */
+        #status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #status .status-text {
+            flex: 1;
+        }
+
+        .icon-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1.5px solid;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .icon-btn.start {
+            border-color: #34d399;
+            color: #34d399;
+        }
+
+        .icon-btn.start:hover {
+            background: rgba(52, 211, 153, 0.12);
+        }
+
+        .icon-btn.stop {
+            border-color: #f87171;
+            color: #f87171;
+        }
+
+        .icon-btn.stop:hover {
+            background: rgba(248, 113, 113, 0.12);
+        }
+
+        .icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Summary button */
+        .summary-btn {
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            background: rgba(167, 139, 250, 0.08);
+            color: #c4b5fd;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+
+        .summary-btn:hover {
+            background: rgba(167, 139, 250, 0.18);
+            border-color: #a78bfa;
+        }
+
+        .summary-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Summary modal */
+        .summary-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .summary-overlay.active {
+            display: flex;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 560px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: imageReveal 0.3s ease;
+        }
+
+        .summary-card h3 {
+            font-size: 16px;
+            color: #e2e8f0;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-card .close-summary {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .summary-section {
+            margin-bottom: 14px;
+        }
+
+        .summary-section .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .summary-section .content {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        .summary-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .summary-tag {
+            padding: 2px 8px;
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            border-radius: 12px;
+            font-size: 11px;
+            color: #6ee7b7;
+        }
+
+        .score-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a78bfa, #34d399);
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+
+        /* Video section */
+        .video-section {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .video-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .video-card video {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .generate-video-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            background: rgba(167, 139, 250, 0.1);
+            color: #c4b5fd;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .generate-video-btn:hover {
+            background: rgba(167, 139, 250, 0.2);
+            border-color: #a78bfa;
+        }
+
+        .generate-video-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 768px) {
             .main-layout {
                 grid-template-columns: 1fr;
@@ -549,12 +711,12 @@
         <div class="header">
             <h1>🎓 EchoVision</h1>
             <p class="subtitle">Real-time speech → AI classification → Visual concept generation</p>
-            <button id="control-btn" class="control-btn start" disabled>
-                <span id="control-btn-text">Start Listening</span>
-            </button>
         </div>
 
-        <div id="status">🔴 Waiting for connection...</div>
+        <div id="status">
+            <span class="status-text" id="status-text">🔴 Waiting for connection...</span>
+            <button id="control-btn" class="icon-btn start" disabled title="Start Listening">&#9654;</button>
+        </div>
 
         <div id="error-banner" class="error-banner">
             <button class="close-btn" onclick="document.getElementById('error-banner').style.display='none'">✕</button>
@@ -575,6 +737,7 @@
                 <div class="panel-header">
                     <h2>🎙️ Live Transcript</h2>
                     <span class="badge" id="transcript-count">0 segments</span>
+                    <button class="summary-btn" id="summary-btn" onclick="fetchSummary()">📊 Summary</button>
                 </div>
                 <div id="transcript-feed"></div>
             </div>
@@ -629,6 +792,23 @@
                 🕓 Previous Images (<span id="history-count">0</span>)
             </div>
             <div class="image-history-grid" id="history-grid"></div>
+        </div>
+
+        <!-- Video Section -->
+        <div class="video-section" id="video-section">
+            <div class="video-card">
+                <button class="generate-video-btn" id="video-btn" onclick="generateVideo()">🎬 Generate Video from Concepts</button>
+                <div id="video-status" style="margin-top:10px; font-size:12px; color:#8b8ba7;"></div>
+                <div id="video-display"></div>
+            </div>
+        </div>
+
+        <!-- Summary Modal -->
+        <div class="summary-overlay" id="summary-overlay" onclick="if(event.target===this)this.classList.remove('active')">
+            <div class="summary-card" id="summary-card">
+                <h3>📊 Lecture Summary <button class="close-summary" onclick="document.getElementById('summary-overlay').classList.remove('active')">✕</button></h3>
+                <div id="summary-content">Loading...</div>
+            </div>
         </div>
 
         <!-- Error Log -->
@@ -802,17 +982,25 @@
         let isListening = false;
 
         const controlBtn = document.querySelector('#control-btn');
-        const controlBtnText = document.querySelector('#control-btn-text');
+        const statusText = document.querySelector('#status-text');
+        const statusDiv = document.querySelector('#status');
 
         function updateControlButton() {
             if (isListening) {
-                controlBtn.className = 'control-btn stop';
-                controlBtnText.textContent = 'Stop Listening';
+                controlBtn.className = 'icon-btn stop';
+                controlBtn.innerHTML = '&#9632;'; // ⏹ stop square
+                controlBtn.title = 'Stop Listening';
             } else {
-                controlBtn.className = 'control-btn start';
-                controlBtnText.textContent = 'Start Listening';
+                controlBtn.className = 'icon-btn start';
+                controlBtn.innerHTML = '&#9654;'; // ▶ play
+                controlBtn.title = 'Start Listening';
             }
             controlBtn.disabled = false;
+        }
+
+        function setStatus(text, color) {
+            statusText.textContent = text;
+            statusDiv.style.borderLeftColor = color;
         }
 
         function connectWebSocket() {
@@ -826,8 +1014,7 @@
                 intentionalClose = false;
                 isListening = true;
                 updateControlButton();
-                document.querySelector('#status').textContent = '🟢 Connected — Listening for speech...';
-                document.querySelector('#status').style.borderLeftColor = '#34d399';
+                setStatus('🟢 Connected — Listening for speech...', '#34d399');
                 console.log('WebSocket connected');
 
                 // Stop previous recorder if running
@@ -855,7 +1042,6 @@
                     }
 
                     if (data.type === 'ping') {
-                        // Reply with pong to keep connection alive
                         if (socket && socket.readyState === 1) {
                             socket.send(JSON.stringify({ type: 'pong' }));
                         }
@@ -886,6 +1072,8 @@
                             addTranscript(data.text, 'concept');
                             conceptsCount++;
                             document.querySelector('#concepts-count').textContent = conceptsCount;
+                            // Show video section when we have concepts
+                            document.querySelector('#video-section').style.display = 'block';
                         } else if (data.category === 'filler') {
                             addTranscript(data.text, 'filler');
                         } else if (data.category === 'administration') {
@@ -920,18 +1108,13 @@
 
                 if (!intentionalClose && reconnectAttempts < MAX_RECONNECT) {
                     reconnectAttempts++;
-                    document.querySelector('#status').textContent =
-                        `🟡 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT})...`;
-                    document.querySelector('#status').style.borderLeftColor = '#fbbf24';
+                    setStatus(`🟡 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT})...`, '#fbbf24');
                     controlBtn.disabled = true;
-                    console.log(`Reconnecting in ${RECONNECT_DELAY}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT})`);
                     setTimeout(connectWebSocket, RECONNECT_DELAY);
                 } else if (intentionalClose) {
-                    document.querySelector('#status').textContent = '🔴 Stopped — Click Start to resume';
-                    document.querySelector('#status').style.borderLeftColor = '#ef4444';
+                    setStatus('🔴 Stopped', '#ef4444');
                 } else {
-                    document.querySelector('#status').textContent = '🔴 Disconnected — Click Start to reconnect';
-                    document.querySelector('#status').style.borderLeftColor = '#ef4444';
+                    setStatus('🔴 Disconnected', '#ef4444');
                 }
             };
 
@@ -942,20 +1125,18 @@
 
         function disconnectWebSocket() {
             intentionalClose = true;
-            reconnectAttempts = MAX_RECONNECT; // Prevent auto-reconnect
+            reconnectAttempts = MAX_RECONNECT;
 
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
 
-            // Send disconnect command to server before closing
             if (socket && socket.readyState === 1) {
                 try {
                     socket.send(JSON.stringify({ type: 'disconnect' }));
                 } catch (e) {
                     console.log('Could not send disconnect command:', e);
                 }
-                // Close after a brief delay to let the command arrive
                 setTimeout(() => {
                     if (socket) socket.close();
                 }, 200);
@@ -975,6 +1156,118 @@
             }
         });
 
+        // ── Summary & Video ──
+
+        async function fetchSummary() {
+            const btn = document.querySelector('#summary-btn');
+            const overlay = document.querySelector('#summary-overlay');
+            const content = document.querySelector('#summary-content');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Loading...';
+            overlay.classList.add('active');
+            content.innerHTML = '<div style="text-align:center;padding:20px;color:#8b8ba7;">Generating summary with Gemini...</div>';
+
+            try {
+                const res = await fetch('/api/summary');
+                const json = await res.json();
+
+                if (json.status === 'error') {
+                    content.innerHTML = `<div style="color:#fca5a5;">⚠️ ${json.message}</div>`;
+                    return;
+                }
+
+                const d = json.data;
+                content.innerHTML = `
+                    <div class="summary-section">
+                        <div class="label">Overview</div>
+                        <div class="content">${d.summary || 'N/A'}</div>
+                    </div>
+                    <div class="summary-section">
+                        <div class="label">Key Concepts</div>
+                        <div class="summary-tags">
+                            ${(d.key_concepts || []).map(c => `<span class="summary-tag">${c}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="summary-section">
+                        <div class="label">Topics Covered</div>
+                        <div class="summary-tags">
+                            ${(d.topics_covered || []).map(t => `<span class="summary-tag" style="color:#93c5fd;border-color:rgba(96,165,250,0.2);background:rgba(96,165,250,0.1);">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="summary-section">
+                        <div class="label">Teaching Score</div>
+                        <div class="content">${d.teaching_score || 0}/10</div>
+                        <div class="score-bar"><div class="score-bar-fill" style="width:${(d.teaching_score || 0) * 10}%"></div></div>
+                    </div>
+                    <div class="summary-section">
+                        <div class="label">Filler Content</div>
+                        <div class="content">${d.filler_percentage || 0}%</div>
+                    </div>
+                    ${d.suggestions ? `<div class="summary-section"><div class="label">Suggestion</div><div class="content">${d.suggestions}</div></div>` : ''}
+                `;
+
+                // Show video section after summary
+                document.querySelector('#video-section').style.display = 'block';
+
+            } catch (e) {
+                content.innerHTML = `<div style="color:#fca5a5;">⚠️ Failed to fetch summary: ${e.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📊 Summary';
+            }
+        }
+
+        async function generateVideo() {
+            const btn = document.querySelector('#video-btn');
+            const statusEl = document.querySelector('#video-status');
+            const display = document.querySelector('#video-display');
+
+            btn.disabled = true;
+            statusEl.textContent = '🎬 Generating video with Veo 3... This may take 1-2 minutes.';
+            display.innerHTML = '<div style="text-align:center;padding:20px;"><div class="spinner" style="margin:0 auto;"></div></div>';
+
+            try {
+                const res = await fetch('/api/generate_video', { method: 'POST' });
+                const json = await res.json();
+
+                if (json.status === 'error') {
+                    statusEl.textContent = '⚠️ ' + json.message;
+                    display.innerHTML = '';
+                    return;
+                }
+
+                statusEl.textContent = '✅ Video generated!';
+                display.innerHTML = `
+                    <video controls autoplay style="max-width:100%;border-radius:8px;margin-top:10px;">
+                        <source src="data:${json.mime_type};base64,${json.video_base64}" type="${json.mime_type}">
+                    </video>
+                    <div style="margin-top:8px;">
+                        <button class="img-action-btn" onclick="downloadVideo('${json.video_base64}', '${json.mime_type}')">⬇️ Download Video</button>
+                    </div>
+                    <div style="margin-top:6px;font-size:11px;color:#6ee7b7;">
+                        📝 Concepts: ${(json.concepts_used || []).join(' • ')}
+                    </div>
+                `;
+
+            } catch (e) {
+                statusEl.textContent = '⚠️ Failed: ' + e.message;
+                display.innerHTML = '';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function downloadVideo(base64Data, mimeType) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const link = document.createElement('a');
+            link.href = `data:${mimeType};base64,${base64Data}`;
+            link.download = `echovision_video_${timestamp}.mp4`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         // Request microphone access on page load
         navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
             if (!MediaRecorder.isTypeSupported('audio/webm'))
@@ -988,8 +1281,7 @@
 
         }).catch((error) => {
             console.error('Microphone access error:', error);
-            document.querySelector('#status').textContent = '🔴 Microphone access denied. Please allow microphone access and reload.';
-            document.querySelector('#status').style.borderLeftColor = '#ef4444';
+            setStatus('🔴 Microphone access denied. Please allow microphone access and reload.', '#ef4444');
             controlBtn.disabled = true;
         });
     </script>

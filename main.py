@@ -99,10 +99,66 @@ async def get_buffer_status():
             "message": str(e)
         }
 
+@app.get("/api/summary")
+async def get_summary():
+    """Generate a structured summary of the lecture"""
+    try:
+        with open("transcriptions.txt", "r", encoding="utf-8") as f:
+            text = f.read()
+        
+        if not text.strip():
+            return {"status": "error", "message": "No transcription data available yet."}
+        
+        summary = await analyzer.generate_summary(text)
+        return {
+            "status": "success",
+            "data": summary
+        }
+    except FileNotFoundError:
+        return {"status": "error", "message": "No transcription data available yet."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/generate_video")
+async def generate_video():
+    """Generate a video from visual concepts using Veo 3"""
+    try:
+        concepts_status = analyzer.get_visual_concepts_status()
+        
+        # Use stored concepts, or read from transcription
+        concepts = concepts_status.get('concepts', [])
+        
+        if not concepts:
+            # Try to get concepts from analysis
+            try:
+                with open("transcriptions.txt", "r", encoding="utf-8") as f:
+                    text = f.read()
+                results = await analyzer.segment_text(text)
+                concepts = results.visual_concept[:5]
+            except Exception:
+                pass
+        
+        if not concepts:
+            return {"status": "error", "message": "No visual concepts available for video generation."}
+        
+        result = await analyzer.generate_video_from_concepts(concepts)
+        return {
+            "status": "success",
+            "video_base64": result['video_base64'],
+            "mime_type": result['mime_type'],
+            "concepts_used": result['concepts_used']
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.websocket("/listen")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("WebSocket accepted")
+    
+    # Clear transcription file for the new session
+    with open("transcriptions.txt", "w", encoding="utf-8") as f:
+        f.write("")
     
     deepgram = AsyncDeepgramClient(api_key=api_key)
     background_tasks = set()  # Track background tasks for cleanup

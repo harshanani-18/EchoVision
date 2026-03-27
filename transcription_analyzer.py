@@ -569,6 +569,178 @@ Style: educational textbook illustration."""
             self.visual_concepts = concepts + self.visual_concepts
             raise RuntimeError(f"Image generation failed: {e}")
 
+    async def generate_summary(self, text: str) -> dict:
+        """
+        Generate a structured summary of the lecture using Gemini.
+        
+        Args:
+            text: Full transcription text
+            
+        Returns:
+            Dict with 'summary', 'key_concepts', 'filler_percentage', 'teaching_score'
+        """
+        if not self.use_gemini:
+            raise RuntimeError("Gemini API is required but not available.")
+        
+        if not text.strip():
+            return {"summary": "No transcription data available.", "key_concepts": [], "filler_percentage": 0, "teaching_score": 0}
+        
+        prompt = f"""Analyze this lecture transcription and provide a structured summary.
+
+Transcription:
+{text[:8000]}
+
+Respond in this exact JSON format (no markdown, no code fences):
+{{
+  "summary": "2-3 sentence overview of what was taught",
+  "key_concepts": ["concept1", "concept2", "concept3"],
+  "topics_covered": ["topic1", "topic2"],
+  "filler_percentage": 15,
+  "teaching_score": 7,
+  "suggestions": "One sentence suggestion for improvement"
+}}
+
+Rules:
+- teaching_score: 1-10 rating of teaching effectiveness
+- filler_percentage: estimated percentage of filler/non-content speech
+- key_concepts: max 5 most important concepts
+- topics_covered: max 4 topics"""
+
+        await self._wait_for_rate_limit()
+        
+        try:
+            response = await self.model.generate_content_async(prompt)
+            result_text = response.text.strip()
+            
+            # Clean up potential markdown formatting
+            if result_text.startswith("```"):
+                result_text = result_text.split("\n", 1)[1]
+                if result_text.endswith("```"):
+                    result_text = result_text[:-3]
+                result_text = result_text.strip()
+            
+            return json.loads(result_text)
+        except json.JSONDecodeError:
+            return {
+                "summary": response.text.strip()[:500],
+                "key_concepts": [],
+                "filler_percentage": 0,
+                "teaching_score": 0,
+                "suggestions": ""
+            }
+        except Exception as e:
+            raise RuntimeError(f"Summary generation failed: {e}")
+
+    async def generate_video_from_concepts(self, concepts: list = None) -> Optional[dict]:
+        """
+        Generate an educational video from visual concepts using Veo 3.
+        
+        Args:
+            concepts: List of concept strings. Uses stored concepts if None.
+            
+        Returns:
+            Dict with 'video_base64', 'mime_type', 'concepts_used'
+        """
+        if not self.image_client:
+            raise RuntimeError("Google GenAI client not available. Install google-genai and set GOOGLE_API_KEY.")
+        
+        if concepts is None:
+            concepts = list(self.visual_concepts)
+        
+        if not concepts:
+            raise RuntimeError("No visual concepts available for video generation.")
+        
+        concepts_text = "\n".join(f"- {c}" for c in concepts[:5])
+        prompt = f"""Create a short educational animation for a classroom setting.
+The video should visually explain these concepts being taught in a lecture:
+
+{concepts_text}
+
+Style: Clean educational animation with clear labels, diagrams morphing and building up.
+Show the concepts being illustrated step by step with smooth transitions.
+Use a clean white background with colorful diagrams and annotations."""
+
+        await self._wait_for_rate_limit()
+        
+        try:
+            # Try models in order of preference
+            veo_models = [
+                "veo-3.0-generate-001",
+                "veo-3.0-fast-generate-001",
+            ]
+            
+            operation = None
+            used_model = None
+            last_errors = []
+            
+            for model_name in veo_models:
+                try:
+                    def _start_video(m=model_name):
+                        return self.image_client.models.generate_videos(
+                            model=m,
+                            prompt=prompt,
+                        )
+                    
+                    operation = await asyncio.to_thread(_start_video)
+                    used_model = model_name
+                    print(f"Video generation started with model: {model_name}")
+                    break
+                except Exception as model_err:
+                    last_errors.append(f"{model_name}: {model_err}")
+                    print(f"Model {model_name} failed: {model_err}")
+                    continue
+            
+            if operation is None:
+                errors_str = " | ".join(last_errors)
+                raise RuntimeError(f"Veo failed: {errors_str}")
+            
+            # Poll until done (max ~3 minutes)
+            max_polls = 36  # 36 * 5s = 180s
+            for _ in range(max_polls):
+                if operation.done:
+                    break
+                await asyncio.sleep(5)
+                
+                def _poll():
+                    return self.image_client.operations.get(operation)
+                operation = await asyncio.to_thread(_poll)
+            
+            if not operation.done:
+                raise RuntimeError("Video generation timed out after 3 minutes")
+            
+            # Download and encode the video
+            generated_video = operation.response.generated_videos[0]
+            
+            import tempfile
+            tmp_path = os.path.join(tempfile.gettempdir(), "echovision_video.mp4")
+            
+            def _download_and_save():
+                self.image_client.files.download(file=generated_video.video)
+                generated_video.video.save(tmp_path)
+            
+            await asyncio.to_thread(_download_and_save)
+            
+            with open(tmp_path, 'rb') as f:
+                video_bytes = f.read()
+            
+            # Clean up temp file
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            
+            video_base64 = base64.b64encode(video_bytes).decode('utf-8')
+            
+            return {
+                "video_base64": video_base64,
+                "mime_type": "video/mp4",
+                "concepts_used": concepts[:5]
+            }
+            
+        except Exception as e:
+            print(f"Video generation failed: {e}")
+            raise RuntimeError(f"Video generation failed: {e}")
+
 
 # Utility function for quick analysis
 def analyze_transcription(text: str, use_gemini: bool = True) -> SegmentedContent:
