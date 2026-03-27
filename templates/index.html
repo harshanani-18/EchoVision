@@ -294,6 +294,95 @@
             overflow-y: auto;
         }
 
+        /* Control button */
+        .control-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 10px;
+            letter-spacing: 0.3px;
+        }
+
+        .control-btn.start {
+            background: transparent;
+            color: #36e036;
+            border-color: #26da6b;
+        }
+
+        .control-btn.start:hover {
+            background: rgba(167, 139, 250, 0.1);
+            box-shadow: 0 0 12px rgba(167, 139, 250, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .control-btn.stop {
+            background: transparent;
+            color: #f87171;
+            border-color: #f87171;
+        }
+
+        .control-btn.stop:hover {
+            background: rgba(248, 113, 113, 0.1);
+            box-shadow: 0 0 12px rgba(248, 113, 113, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .control-btn .btn-icon {
+            font-size: 13px;
+        }
+
+        /* Image download button */
+        .image-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            display: none;
+        }
+
+        #image-display:hover .image-actions,
+        .image-actions:hover {
+            display: flex;
+            gap: 6px;
+        }
+
+        .img-action-btn {
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .img-action-btn:hover {
+            background: rgba(167, 139, 250, 0.5);
+            border-color: #a78bfa;
+        }
+
         /* Status bar */
         .status-bar {
             margin-top: 16px;
@@ -460,6 +549,9 @@
         <div class="header">
             <h1>🎓 EchoVision</h1>
             <p class="subtitle">Real-time speech → AI classification → Visual concept generation</p>
+            <button id="control-btn" class="control-btn start" disabled>
+                <span id="control-btn-text">Start Listening</span>
+            </button>
         </div>
 
         <div id="status">🔴 Waiting for connection...</div>
@@ -494,6 +586,11 @@
                     <span class="badge" id="image-badge">waiting</span>
                 </div>
                 <div id="image-display">
+                    <div class="image-actions" id="image-actions">
+                        <button class="img-action-btn" id="download-btn" onclick="downloadCurrentImage()">
+                            ⬇️ Download
+                        </button>
+                    </div>
                     <div class="image-placeholder" id="image-placeholder">
                         <div class="icon">🎨</div>
                         <p>Listening for visual concepts...<br>
@@ -549,6 +646,7 @@
         let totalSegments = 0;
         let errorCount = 0;
         let imageHistory = [];
+        let currentImageData = null; // Track current displayed image for download
 
         function showError(message, rateLimit) {
             const banner = document.querySelector('#error-banner');
@@ -598,7 +696,9 @@
 
         function showGenerating(concepts) {
             const display = document.querySelector('#image-display');
+            document.querySelector('#image-actions').style.display = 'none';
             display.innerHTML = `
+                <div class="image-actions" id="image-actions" style="display:none;"></div>
                 <div class="generating-state">
                     <div class="spinner"></div>
                     <p>Generating visualization...</p>
@@ -610,11 +710,18 @@
 
         function showImage(imageData, mimeType, conceptsUsed) {
             const display = document.querySelector('#image-display');
+            display.innerHTML = `
+                <div class="image-actions" id="image-actions">
+                    <button class="img-action-btn" onclick="downloadCurrentImage()">⬇️ Download</button>
+                </div>
+            `;
             const img = document.createElement('img');
             img.src = `data:${mimeType};base64,${imageData}`;
             img.alt = 'Generated visualization';
-            display.innerHTML = '';
             display.appendChild(img);
+
+            // Track current image for download
+            currentImageData = { data: imageData, mimeType: mimeType, concepts: conceptsUsed };
 
             // Show concepts used
             const conceptsDiv = document.querySelector('#concepts-used');
@@ -631,6 +738,24 @@
             updateHistory();
         }
 
+        function downloadCurrentImage() {
+            if (!currentImageData) return;
+            downloadImage(currentImageData.data, currentImageData.mimeType);
+        }
+
+        function downloadImage(base64Data, mimeType) {
+            const ext = mimeType.includes('png') ? 'png' : mimeType.includes('jpeg') ? 'jpg' : 'png';
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `echovision_image_${timestamp}.${ext}`;
+
+            const link = document.createElement('a');
+            link.href = `data:${mimeType};base64,${base64Data}`;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function updateHistory() {
             if (imageHistory.length < 2) return;
 
@@ -644,13 +769,20 @@
             // Show all but the latest (which is currently displayed)
             for (let i = imageHistory.length - 2; i >= 0; i--) {
                 const item = imageHistory[i];
+                const idx = i;
                 const thumb = document.createElement('div');
                 thumb.className = 'history-thumb';
                 thumb.innerHTML = `<img src="data:${item.mimeType};base64,${item.data}" alt="Generated image ${i + 1}">`;
                 thumb.onclick = () => {
                     // Click to view full size
+                    currentImageData = item;
                     const display = document.querySelector('#image-display');
-                    display.innerHTML = `<img src="data:${item.mimeType};base64,${item.data}" alt="Generated image">`;
+                    display.innerHTML = `
+                        <div class="image-actions" id="image-actions">
+                            <button class="img-action-btn" onclick="downloadCurrentImage()">⬇️ Download</button>
+                        </div>
+                        <img src="data:${item.mimeType};base64,${item.data}" alt="Generated image">
+                    `;
                     const conceptsDiv = document.querySelector('#concepts-used');
                     conceptsDiv.style.display = 'block';
                     conceptsDiv.textContent = '📝 Based on: ' + item.concepts.join(' • ');
@@ -659,129 +791,206 @@
             }
         }
 
+        // ── Connection Management ──
+        let audioStream = null;
+        let mediaRecorder = null;
+        let socket = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT = 5;
+        const RECONNECT_DELAY = 2000;
+        let intentionalClose = false;
+        let isListening = false;
+
+        const controlBtn = document.querySelector('#control-btn');
+        const controlBtnText = document.querySelector('#control-btn-text');
+
+        function updateControlButton() {
+            if (isListening) {
+                controlBtn.className = 'control-btn stop';
+                controlBtnText.textContent = 'Stop Listening';
+            } else {
+                controlBtn.className = 'control-btn start';
+                controlBtnText.textContent = 'Start Listening';
+            }
+            controlBtn.disabled = false;
+        }
+
+        function connectWebSocket() {
+            if (!audioStream) return;
+
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(`${wsProtocol}//${window.location.host}/listen`);
+
+            socket.onopen = () => {
+                reconnectAttempts = 0;
+                intentionalClose = false;
+                isListening = true;
+                updateControlButton();
+                document.querySelector('#status').textContent = '🟢 Connected — Listening for speech...';
+                document.querySelector('#status').style.borderLeftColor = '#34d399';
+                console.log('WebSocket connected');
+
+                // Stop previous recorder if running
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+
+                mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+                mediaRecorder.addEventListener('dataavailable', async (event) => {
+                    if (event.data.size > 0 && socket && socket.readyState === 1) {
+                        socket.send(event.data);
+                    }
+                });
+                mediaRecorder.start(250);
+            };
+
+            socket.onmessage = (message) => {
+                try {
+                    const data = JSON.parse(message.data);
+                    console.log('Received:', data);
+
+                    if (data.type === 'error') {
+                        showError(data.error, data.rate_limit || null);
+                        return;
+                    }
+
+                    if (data.type === 'ping') {
+                        // Reply with pong to keep connection alive
+                        if (socket && socket.readyState === 1) {
+                            socket.send(JSON.stringify({ type: 'pong' }));
+                        }
+                        return;
+                    }
+
+                    if (data.type === 'transcript') {
+                        addTranscript(data.text);
+                        return;
+                    }
+
+                    if (data.type === 'buffering') {
+                        const pct = (data.buffered / data.buffer_size) * 100;
+                        document.querySelector('#buffer-indicator').style.display = 'block';
+                        document.querySelector('#buffer-text').textContent = `${data.buffered}/${data.buffer_size}`;
+                        document.querySelector('#buffer-bar').style.width = `${pct}%`;
+
+                        if (data.concepts_count !== undefined) {
+                            document.querySelector('#concepts-count').textContent = data.concepts_count;
+                        }
+                        return;
+                    }
+
+                    if (data.type === 'classification') {
+                        document.querySelector('#buffer-indicator').style.display = 'none';
+
+                        if (data.category === 'visual_concept') {
+                            addTranscript(data.text, 'concept');
+                            conceptsCount++;
+                            document.querySelector('#concepts-count').textContent = conceptsCount;
+                        } else if (data.category === 'filler') {
+                            addTranscript(data.text, 'filler');
+                        } else if (data.category === 'administration') {
+                            addTranscript(data.text, 'administration');
+                        }
+                        return;
+                    }
+
+                    if (data.type === 'image_generating') {
+                        showGenerating(data.concepts || []);
+                        return;
+                    }
+
+                    if (data.type === 'generated_image') {
+                        showImage(data.image_data, data.mime_type, data.concepts_used || []);
+                        return;
+                    }
+
+                } catch (e) {
+                    console.error('Error parsing message:', e);
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket closed');
+                isListening = false;
+                updateControlButton();
+
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+
+                if (!intentionalClose && reconnectAttempts < MAX_RECONNECT) {
+                    reconnectAttempts++;
+                    document.querySelector('#status').textContent =
+                        `🟡 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT})...`;
+                    document.querySelector('#status').style.borderLeftColor = '#fbbf24';
+                    controlBtn.disabled = true;
+                    console.log(`Reconnecting in ${RECONNECT_DELAY}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT})`);
+                    setTimeout(connectWebSocket, RECONNECT_DELAY);
+                } else if (intentionalClose) {
+                    document.querySelector('#status').textContent = '🔴 Stopped — Click Start to resume';
+                    document.querySelector('#status').style.borderLeftColor = '#ef4444';
+                } else {
+                    document.querySelector('#status').textContent = '🔴 Disconnected — Click Start to reconnect';
+                    document.querySelector('#status').style.borderLeftColor = '#ef4444';
+                }
+            };
+
+            socket.onerror = (error) => {
+                console.log('WebSocket error:', error);
+            };
+        }
+
+        function disconnectWebSocket() {
+            intentionalClose = true;
+            reconnectAttempts = MAX_RECONNECT; // Prevent auto-reconnect
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+
+            // Send disconnect command to server before closing
+            if (socket && socket.readyState === 1) {
+                try {
+                    socket.send(JSON.stringify({ type: 'disconnect' }));
+                } catch (e) {
+                    console.log('Could not send disconnect command:', e);
+                }
+                // Close after a brief delay to let the command arrive
+                setTimeout(() => {
+                    if (socket) socket.close();
+                }, 200);
+            }
+
+            isListening = false;
+            updateControlButton();
+        }
+
+        controlBtn.addEventListener('click', () => {
+            if (isListening) {
+                disconnectWebSocket();
+            } else {
+                reconnectAttempts = 0;
+                intentionalClose = false;
+                connectWebSocket();
+            }
+        });
+
+        // Request microphone access on page load
         navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
             if (!MediaRecorder.isTypeSupported('audio/webm'))
                 return alert('Browser not supported');
 
-            let mediaRecorder = null;
-            let socket = null;
-            let reconnectAttempts = 0;
-            const MAX_RECONNECT = 5;
-            const RECONNECT_DELAY = 2000;
-            let intentionalClose = false;
+            audioStream = stream;
+            controlBtn.disabled = false;
 
-            function connectWebSocket() {
-                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                socket = new WebSocket(`${wsProtocol}//${window.location.host}/listen`);
-
-                socket.onopen = () => {
-                    reconnectAttempts = 0;
-                    intentionalClose = false;
-                    document.querySelector('#status').textContent = '🟢 Connected — Listening for speech...';
-                    document.querySelector('#status').style.borderLeftColor = '#34d399';
-                    console.log('WebSocket connected');
-
-                    // Stop previous recorder if running
-                    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                        mediaRecorder.stop();
-                    }
-
-                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                    mediaRecorder.addEventListener('dataavailable', async (event) => {
-                        if (event.data.size > 0 && socket && socket.readyState === 1) {
-                            socket.send(event.data);
-                        }
-                    });
-                    mediaRecorder.start(250);
-                };
-
-                socket.onmessage = (message) => {
-                    try {
-                        const data = JSON.parse(message.data);
-                        console.log('Received:', data);
-
-                        if (data.type === 'error') {
-                            showError(data.error, data.rate_limit || null);
-                            return;
-                        }
-
-                        if (data.type === 'transcript') {
-                            addTranscript(data.text);
-                            return;
-                        }
-
-                        if (data.type === 'buffering') {
-                            const pct = (data.buffered / data.buffer_size) * 100;
-                            document.querySelector('#buffer-indicator').style.display = 'block';
-                            document.querySelector('#buffer-text').textContent = `${data.buffered}/${data.buffer_size}`;
-                            document.querySelector('#buffer-bar').style.width = `${pct}%`;
-
-                            if (data.concepts_count !== undefined) {
-                                document.querySelector('#concepts-count').textContent = data.concepts_count;
-                            }
-                            return;
-                        }
-
-                        if (data.type === 'classification') {
-                            document.querySelector('#buffer-indicator').style.display = 'none';
-
-                            if (data.category === 'visual_concept') {
-                                addTranscript(data.text, 'concept');
-                                conceptsCount++;
-                                document.querySelector('#concepts-count').textContent = conceptsCount;
-                            } else if (data.category === 'filler') {
-                                addTranscript(data.text, 'filler');
-                            } else if (data.category === 'administration') {
-                                addTranscript(data.text, 'administration');
-                            }
-                            return;
-                        }
-
-                        if (data.type === 'image_generating') {
-                            showGenerating(data.concepts || []);
-                            return;
-                        }
-
-                        if (data.type === 'generated_image') {
-                            showImage(data.image_data, data.mime_type, data.concepts_used || []);
-                            return;
-                        }
-
-                    } catch (e) {
-                        console.error('Error parsing message:', e);
-                    }
-                };
-
-                socket.onclose = () => {
-                    console.log('WebSocket closed');
-                    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                        mediaRecorder.stop();
-                    }
-
-                    if (!intentionalClose && reconnectAttempts < MAX_RECONNECT) {
-                        reconnectAttempts++;
-                        document.querySelector('#status').textContent =
-                            `🟡 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT})...`;
-                        document.querySelector('#status').style.borderLeftColor = '#fbbf24';
-                        console.log(`Reconnecting in ${RECONNECT_DELAY}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT})`);
-                        setTimeout(connectWebSocket, RECONNECT_DELAY);
-                    } else {
-                        document.querySelector('#status').textContent = '🔴 Disconnected';
-                        document.querySelector('#status').style.borderLeftColor = '#ef4444';
-                    }
-                };
-
-                socket.onerror = (error) => {
-                    console.log('WebSocket error:', error);
-                };
-            }
-
+            // Auto-start on page load
             connectWebSocket();
 
         }).catch((error) => {
             console.error('Microphone access error:', error);
             document.querySelector('#status').textContent = '🔴 Microphone access denied. Please allow microphone access and reload.';
             document.querySelector('#status').style.borderLeftColor = '#ef4444';
+            controlBtn.disabled = true;
         });
     </script>
 </body>

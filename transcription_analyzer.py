@@ -1,7 +1,7 @@
 """
-Transcription Analyzer Module with Gemini Flash 2.5
+Transcription Analyzer Module with Gemini 2.5 Flash (Paid Tier)
 
-Uses Google's Gemini Flash 2.5 AI model for intelligent classification
+Uses Google's latest Gemini 2.5 Flash AI model for intelligent classification
 of transcribed text into three categories:
 1. FILLER - Filler words, hesitations, and discourse markers
 2. ADMINISTRATION - Meta-statements, logistics, timestamps, speaker intro
@@ -65,7 +65,7 @@ class SegmentedContent:
 
 class TranscriptionAnalyzer:
     """
-    Analyzes and segregates transcribed text using Google's Gemini Flash 2.5 AI model
+    Analyzes and segregates transcribed text using Google's latest Gemini 2.5 Flash AI model (Paid Tier)
     
     This analyzer uses advanced language understanding to classify content intelligently,
     providing better accuracy than pattern matching alone.
@@ -88,9 +88,9 @@ class TranscriptionAnalyzer:
         self.buffer_timeout = buffer_timeout  # Classify after 3 seconds if buffer not full
         self.segment_buffer = []  # Current buffer of accumulated segments
         
-        # Rate limiting (Gemini free tier: 10 RPM, 250 RPD)
-        self.max_rpm = 9  # Stay 1 under the 10 RPM limit for safety
-        self.max_rpd = 240  # Stay 10 under the 250 RPD limit for safety
+        # Rate limiting (Gemini paid tier: 2000 RPM, no strict daily limit)
+        self.max_rpm = 1000  # Paid tier allows up to 2000 RPM; using half for safety
+        self.max_rpd = 100000  # Paid tier has no strict daily limit
         self._request_timestamps = []  # Track per-minute requests
         self._daily_request_count = 0
         self._daily_reset_time = time.time()  # Resets every 24h
@@ -102,7 +102,7 @@ class TranscriptionAnalyzer:
                 self.use_gemini = False
             else:
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-2.0-flash')
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
         
         # Image generation client (new SDK)
         self.image_client = None
@@ -226,7 +226,7 @@ Respond with ONLY a numbered list with categories, one per line, like:
         for attempt in range(max_retries):
             try:
                 await self._wait_for_rate_limit()
-                response = self.model.generate_content(prompt)
+                response = await self.model.generate_content_async(prompt)
                 lines = response.text.strip().split('\n')
                 
                 results = []
@@ -323,7 +323,7 @@ Respond with ONLY a numbered list with categories, one per line, like:
     
     async def segment_sentence_async(self, text: str) -> ContentType:
         """
-        Classify a single sentence using Gemini Flash 2.5
+        Classify a single sentence using Gemini 2.5 Flash
         
         Args:
             text: Text to classify
@@ -347,7 +347,7 @@ Speech segment: "{text}"
 Respond with ONLY the category name (FILLER, ADMINISTRATION, or VISUAL_CONCEPT). No explanation."""
 
         await self._wait_for_rate_limit()
-        response = self.model.generate_content(prompt)
+        response = await self.model.generate_content_async(prompt)
         classification = response.text.strip().upper()
         
         # Validate response
@@ -453,7 +453,7 @@ Respond with ONLY the category name (FILLER, ADMINISTRATION, or VISUAL_CONCEPT).
     def print_analysis(self, segmented: SegmentedContent):
         """Pretty print the analysis results"""
         print("\n" + "="*80)
-        print("TRANSCRIPTION ANALYSIS REPORT (Powered by Gemini Flash 2.5)" if self.use_gemini else "TRANSCRIPTION ANALYSIS REPORT (Pattern Matching Fallback)")
+        print("TRANSCRIPTION ANALYSIS REPORT (Powered by Gemini 2.5 Flash)" if self.use_gemini else "TRANSCRIPTION ANALYSIS REPORT (Pattern Matching Fallback)")
         print("="*80)
         
         print(f"\n📝 FILLER WORDS & HESITATIONS ({len(segmented.filler)})")
@@ -530,10 +530,14 @@ Style: educational textbook illustration."""
         await self._wait_for_rate_limit()
         
         try:
-            response = self.image_client.models.generate_content(
-                model="gemini-2.5-flash-image",
-                contents=[prompt],
-            )
+            # Run the sync image generation call in a thread to avoid blocking the event loop
+            def _sync_generate():
+                return self.image_client.models.generate_content(
+                    model="gemini-2.5-flash-image",
+                    contents=[prompt],
+                )
+            
+            response = await asyncio.to_thread(_sync_generate)
             
             # Extract image from response
             for part in response.parts:
@@ -586,7 +590,7 @@ if __name__ == "__main__":
     
     # Save results to JSON
     output = {
-        "model": "Gemini Flash 2.5" if analyzer.use_gemini else "Pattern Matching",
+        "model": "Gemini 2.5 Flash" if analyzer.use_gemini else "Pattern Matching",
         "summary": {
             "total_filler": len(results.filler),
             "total_administration": len(results.administration),
